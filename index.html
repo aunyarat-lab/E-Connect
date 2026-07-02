@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Connect AI: Interactive n8n System Flow</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Sarabun & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', 'Sarabun', sans-serif;
+            background-color: #0b0f19;
+        }
+        /* จำลองลายจุด Dotted Background ของ n8n Canvas */
+        .n8n-canvas {
+            background-image: radial-gradient(#1e293b 1.5px, transparent 1.5px);
+            background-size: 24px 24px;
+            background-color: #090d16;
+        }
+        /* แอนิเมชันเส้นเชื่อมโยงวิ่งแบบเรียลไทม์ */
+        .flow-line-active {
+            stroke-dasharray: 8;
+            animation: flowDash 40s linear infinite;
+        }
+        @keyframes flowDash {
+            to {
+                stroke-dashoffset: -1000;
+            }
+        }
+        /* เอฟเฟกต์เรืองแสงให้กับโหนดและปุ่ม */
+        .glow-orange { filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.4)); }
+        .glow-indigo { filter: drop-shadow(0 0 8px rgba(99, 102, 241, 0.4)); }
+        .glow-green { filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.4)); }
+        .glow-red { filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.4)); }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 font-extrabold text-xl glow-orange">n8n</div>
+            <div>
+                <h1 class="text-xl font-extrabold tracking-tight text-slate-100 flex items-center gap-2">
+                    E-Connect AI <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">System Flow Map</span>
+                </h1>
+                <p class="text-xs text-slate-400">ระบบคลังข้อมูลนำทางอัจฉริยะสำหรับฝ่ายปฏิบัติการบริการอิเล็กทรอนิกส์</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="highlightWorkflow(1)" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all duration-200">
+                <i class="fa-solid fa-database mr-1.5"></i> Workflow 1: โหลดคลังความรู้
+            </button>
+            <button onclick="highlightWorkflow(2)" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all duration-200">
+                <i class="fa-solid fa-comments mr-1.5"></i> Workflow 2: ตอบสนองนำทาง
+            </button>
+            <button onclick="resetHighlight()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all duration-200">
+                <i class="fa-solid fa-arrows-rotate mr-1.5"></i> ดูภาพรวมทั้งหมด
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Interactive Canvas Area -->
+    <main class="flex-1 grid grid-cols-1 xl:grid-cols-4 overflow-hidden relative">
+        
+        <!-- Left Side: Interactive n8n Canvas Simulator -->
+        <div class="xl:col-span-3 n8n-canvas p-6 flex items-center justify-center relative min-h-[600px] overflow-auto">
+            
+            <div class="relative w-[850px] h-[650px] scale-90 md:scale-100 transition-transform origin-center duration-300">
+                
+                <!-- SVG Connections Background (Simulating n8n wires) -->
+                <svg class="absolute inset-0 w-full h-full pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Workflow 1 Lines -->
+                    <!-- Google Drive to Simple Vector Store -->
+                    <path id="line-1" d="M 120,120 L 450,120" stroke="#f97316" stroke-width="2" fill="none" class="pulse-line flow-line-active" />
+                    <!-- Simple Vector Store to Embeddings Gemini -->
+                    <path id="line-2" d="M 450,120 Q 375,200 375,280" stroke="#2563eb" stroke-dasharray="4" stroke-width="1.5" fill="none" class="opacity-80" />
+                    <!-- Simple Vector Store to Default Data Loader -->
+                    <path id="line-3" d="M 450,120 Q 525,200 525,280" stroke="#2563eb" stroke-dasharray="4" stroke-width="1.5" fill="none" class="opacity-80" />
+
+                    <!-- Workflow 2 Lines -->
+                    <!-- Chat received to AI Agent -->
+                    <path id="line-4" d="M 120,440 L 450,440" stroke="#94a3b8" stroke-width="2" fill="none" class="pulse-line flow-line-active" />
+                    <!-- AI Agent to Google Gemini Chat Model -->
+                    <path id="line-5" d="M 450,440 Q 375,520 375,600" stroke="#2563eb" stroke-dasharray="4" stroke-width="1.5" fill="none" class="opacity-80" />
+                    <!-- AI Agent to Simple Memory -->
+                    <path id="line-6" d="M 450,440 Q 525,520 525,600" stroke="#2563eb" stroke-dasharray="4" stroke-width="1.5" fill="none" class="opacity-80" />
+                    <!-- AI Agent to Simple Vector Store 1 (Tool) -->
+                    <path id="line-7" d="M 450,440 Q 650,440 650,440" stroke="#94a3b8" stroke-dasharray="4" stroke-width="1.5" fill="none" class="opacity-80" />
+                    <!-- Simple Vector Store 1 to Embeddings Gemini 1 -->
+                    <path id="line-8" d="M 650,440 Q 750,600 750,600" stroke="#2563eb" stroke-dasharray="4" stroke-width="1.5" fill="none" class="opacity-80" />
+                </svg>
+
+                <!-- ==================== WORKFLOW 1 (UPPER PANEL) ==================== -->
+                <!-- Trigger Node 1: Google Drive Trigger -->
+                <div id="node-drive-trigger" onclick="showNodeDetail('drive-trigger')" 
+                     class="absolute left-[20px] top-[70px] w-52 bg-slate-900 border-2 border-orange-500 rounded-xl p-3.5 shadow-lg shadow-orange-500/10 cursor-pointer hover:scale-105 hover:bg-slate-850 transition duration-250 z-20 group">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] bg-orange-500/20 text-orange-400 font-bold px-2 py-0.5 rounded-full uppercase">Trigger</span>
+                        <i class="fa-solid fa-bolt text-orange-400 animate-pulse"></i>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 text-lg glow-orange">
+                            <i class="fa-brands fa-google-drive"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-200">Google Drive Trigger</h4>
+                            <p class="text-[9px] text-slate-400">fileUpdated</p>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 pt-2 border-t border-slate-800 text-[10px] text-slate-400 leading-tight">
+                        <span class="text-orange-400 font-bold">●</span> ตรวจจับไฟล์ SOP ใหม่ในไดรฟ์
+                    </div>
+                </div>
+
+                <!-- Central Node 1: Simple Vector Store -->
+                <div id="node-vector-store-1" onclick="showNodeDetail('vector-store-1')" 
+                     class="absolute left-[345px] top-[70px] w-56 bg-slate-900 border-2 border-emerald-500 rounded-xl p-3.5 shadow-lg shadow-emerald-500/10 cursor-pointer hover:scale-105 hover:bg-slate-850 transition duration-250 z-20 group">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full uppercase">Vector Store</span>
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-lg glow-green">
+                            <i class="fa-solid fa-cube"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-200">Simple Vector Store</h4>
+                            <p class="text-[9px] text-emerald-400 font-medium">คลังข้อมูลพร้อมสืบค้น</p>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 pt-2 border-t border-slate-800 text-[10px] text-slate-400 leading-tight">
+                        <span class="text-emerald-400 font-bold">●</span> เก็บพิกัดและข้อมูลของคู่มือ
+                    </div>
+                </div>
+
+                <!-- Embeddings Node: Embeddings Google Gemini -->
+                <div id="node-embeddings-1" onclick="showNodeDetail('embeddings-1')" 
+                     class="absolute left-[260px] top-[230px] w-52 bg-slate-900 border border-slate-800 rounded-xl p-3 cursor-pointer hover:scale-105 hover:bg-slate-850 transition duration-250 z-10">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 text-sm">
+                            <i class="fa-brands fa-google text-xs"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-[11px] font-bold text-slate-200">Embeddings Gemini</h5>
+                            <p class="text-[9px] text-indigo-400 font-medium">แปลข้อจำเป็นรหัสเวกเตอร์</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Loader Node: Default Data Loader -->
+                <div id="node-data-loader" onclick="showNodeDetail('data-loader')" 
+                     class="absolute left-[490px] top-[230px] w-50 bg-slate-900 border border-slate-800 rounded-xl p-3 cursor-pointer hover:scale-105 hover:bg-slate-850 transition duration-250 z-10">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300 text-sm">
+                            <i class="fa-solid fa-file-pdf"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-[11px] font-bold text-slate-200">Default Data Loader</h5>
+                            <p class="text-[9px] text-slate-400">สกัดเนื้อหา Text จาก PDF</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- ==================== WORKFLOW 2 (LOWER PANEL) ==================== -->
+                <!-- Trigger Node 2: When Chat Message Received -->
+                <div id="node-chat-trigger" onclick="showNodeDetail('chat-trigger')" 
+                     class="absolute left-[20px] top-[390px] w-52 bg-slate-900 border-2 border-orange-500 rounded-xl p-3.5 shadow-lg shadow-orange-500/10 cursor-pointer hover:scale-105 hover:bg-slate-850 transition duration-250 z-20 group">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] bg-orange-500/20 text-orange-400 font-bold px-2 py-0.5 rounded-full uppercase">Trigger</span>
+                        <i class="fa-solid fa-bolt text-orange-400"></i>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 text-lg glow-orange">
+                            <i class="fa-solid fa-comment-dots"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-200">Chat Received</h4>
+                            <p class="text-[9px] text-slate-400">ช่องทางแชทพนักงาน</p>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 pt-2 border-t border-slate-800 text-[10px] text-slate-400 leading-tight">
+                        <span class="text-orange-400 font-bold">●</span> รับข้อมูลคำถามผ่าน Web App
+                    </div>
+                </div>
+
+                <!-- Central Node 2: AI Agent (Core Agent) -->
+                <div id="node-ai-agent" onclick="showNodeDetail('ai-agent')" 
+                     class="absolute left-[345px] top-[390px] w-56 bg-slate-900 border-2 border-slate-700 rounded-xl p-3.5 shadow-lg cursor-pointer hover:scale-105 hover:bg-slate-850 transition duration-250 z-20 group">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] bg-indigo-500/20 text-indigo-400 font-bold px-2 py-0.5 rounded-full uppercase">AI Agent</span>
+                        <i class="fa-solid fa-robot text-indigo-400 animate-bounce"></i>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-lg glow-indigo">
+                            <i class="fa-solid fa-brain"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-200">AI Agent</h4>
+                            <p class="text-[9px] text-indigo-400 font-medium">สมองกลวิเคราะห์ระดับแผนก</p>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 pt-2 border-t border-slate-800 text-[10px] text-slate-400 leading-tight">
+                        <span class="text-indigo-400 font-bold">●</span> ตัวนำทางประสานคู่มือ 5 ทีม
+                    </div>
+                </div>
+
+                <!-- Chat Model Node: Google Gemini Chat Model -->
+                <div id="node-chat-model" onclick="showNodeDetail('chat-model')" 
+                     class="absolute left-[260px] top-[550px] w-52 bg-slate-900 border border-slate-800 rounded-xl p-3 cursor-pointer hover:scale-105 hover:bg-slate-850 transition duration-250 z-10">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 text-sm glow-indigo">
+                            <i class="fa-brands fa-google text-xs"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-[11px] font-bold text-slate-200">Gemini Chat Model</h5>
+                            <p class="text-[9px] text-indigo-400 font-medium">ประมวลคำตอบ สุภาพ มีระบบ</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Memory Node: Simple Memory -->
+                <div id="node-memory" onclick="showNodeDetail('memory')" 
+                     class="absolute left-[490px] top-[550px] w-50 bg-slate-900 border border-slate-800 rounded-xl p-3 cursor-pointer hover:scale-105 hover:bg-slate-850 transition duration-250 z-10">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-300 text-sm">
+                            <i class="fa-solid fa-database text-xs"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-[11px] font-bold text-slate-200">Simple Memory</h5>
+                            <p class="text-[9px] text-slate-400">จำบทสนทนา ไม่ถามความซ้ำซาก</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tool Node: Simple Vector Store 1 -->
+                <div id="node-vector-tool" onclick="showNodeDetail('vector-tool')" 
+                     class="absolute left-[640px] top-[430px] w-52 bg-slate-900 border border-slate-800 rounded-xl p-3 cursor-pointer hover:scale-105 hover:bg-slate-850 transition duration-250 z-10">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-sm glow-green">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-[11px] font-bold text-slate-200">Vector Store (Tool)</h5>
+                            <p class="text-[9px] text-emerald-400 font-medium">เครื่องมือสืบค้นเชิงภาษา (RAG)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Embeddings Node 2: Embeddings Google Gemini 1 -->
+                <div id="node-embeddings-2" onclick="showNodeDetail('embeddings-2')" 
+                     class="absolute left-[700px] top-[550px] w-52 bg-slate-900 border border-slate-800 rounded-xl p-3 cursor-pointer hover:scale-105 hover:bg-slate-850 transition duration-250 z-10">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 text-sm">
+                            <i class="fa-brands fa-google text-xs"></i>
+                        </div>
+                        <div>
+                            <h5 class="text-[11px] font-bold text-slate-200">Gemini Embeddings 2</h5>
+                            <p class="text-[9px] text-indigo-400 font-medium">เทียบความหายคำค้นหา</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Right Side: Concise Explanation Panel (Presenter Panel) -->
+        <div class="xl:col-span-1 bg-slate-950/90 border-t xl:border-t-0 xl:border-l border-slate-800 p-6 flex flex-col justify-between overflow-y-auto">
+            
+            <!-- Contextual Card Description -->
+            <div id="detail-panel" class="space-y-6">
+                <div>
+                    <span class="text-[11px] bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full border border-slate-700 font-semibold uppercase">ตัวจำลองและผู้นำเสนอ</span>
+                    <h2 id="detail-title" class="text-xl font-bold text-slate-100 mt-2">สัมผัสที่แต่ละโหนดใน n8n</h2>
+                    <p id="detail-subtitle" class="text-xs text-slate-400 mt-1">คลิกที่โหนดเพื่อดูคำอธิบายที่กระชับ สรุปบทบาท และประโยชน์ในการใช้งานเพื่อนำเสนองานจริง</p>
+                </div>
+
+                <div id="detail-box" class="hidden space-y-4 p-4 rounded-xl bg-slate-900 border border-slate-800 transition duration-300">
+                    <div class="flex items-center gap-3">
+                        <div id="detail-icon" class="w-12 h-12 rounded-lg flex items-center justify-center text-lg"></div>
+                        <div>
+                            <h3 id="node-title" class="font-bold text-slate-100 text-sm">ชื่อโหนด</h3>
+                            <span id="node-type" class="text-[10px] font-semibold uppercase">ประเภท</span>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3 pt-3 border-t border-slate-800/80">
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase block font-semibold">สรุปหน้าที่สั้นกระชับ</span>
+                            <p id="node-desc" class="text-xs text-slate-200 leading-relaxed font-semibold mt-1">คำอธิบาย</p>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-indigo-400 uppercase block font-semibold">คุณประโยชน์ต่อ 5 ทีม</span>
+                            <p id="node-benefit" class="text-xs text-slate-300 leading-relaxed mt-1">ประโยชน์</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Standard Flow Summary Card (fallback) -->
+                <div id="standard-info" class="space-y-4">
+                    <div class="p-4 rounded-xl bg-indigo-950/20 border border-indigo-900/30">
+                        <h4 class="text-xs font-bold text-indigo-400 uppercase flex items-center gap-1.5 mb-2">
+                            <i class="fa-solid fa-lightbulb"></i> Workflow 1: คลังสะสมอัจฉริยะ
+                        </h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            ทำหน้าที่ดึงคู่มือและเอกสารการทำงานของทั้ง 5 ทีมเข้ามาเปลี่ยนให้เป็น "รหัสเวกเตอร์ทางภาษา" โดยทำงานแบบอัตโนมัติเมื่อมีไฟล์ใหม่ เพื่อเตรียมพร้อมให้ระบบวิเคราะห์ความหมายได้ทันที
+                        </p>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-900/30">
+                        <h4 class="text-xs font-bold text-emerald-400 uppercase flex items-center gap-1.5 mb-2">
+                            <i class="fa-solid fa-comments"></i> Workflow 2: ระบบนำทางอัจฉริยะ
+                        </h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            รับเรื่องเพื่อคัดกรอง แยกปัญหา ตอบกลับ ตลอดจนระบุ SLA พร้อมยื่นลิงก์และ Checklist ถัดไปให้เสร็จสรรพในที่เดียว ประหยัดเวลาส่งงานข้ามแผนก
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Presenter Action Section -->
+            <div class="pt-6 border-t border-slate-800 mt-6 space-y-2">
+                <span class="text-[10px] text-slate-500 block uppercase font-bold tracking-wider">โหมดการนำเสนอฉับไว</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="startPresentation()" class="py-2.5 rounded-lg text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center gap-2 transition duration-200">
+                        <i class="fa-solid fa-play"></i> เริ่มนำเสนอทีละขั้น
+                    </button>
+                    <button onclick="stopPresentation()" class="py-2.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center gap-2 transition duration-200">
+                        <i class="fa-solid fa-stop"></i> ปิดนำเสนอ
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer Section with Copyright -->
+    <footer class="bg-slate-950 border-t border-slate-800 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <p>E-Connect AI Project • n8n x Google AI Studio Platform Integration</p>
+        <p class="flex items-center gap-1">
+            <i class="fa-solid fa-copyright"></i> 2026 ฝ่ายปฏิบัติการบริการอิเล็กทรอนิกส์ (ธนาคารอาคารสงเคราะห์)
+        </p>
+    </footer>
+
+    <!-- Javascript Interactive Logic -->
+    <script>
+        // ข้อมูลโฮสต์คำพูดประกอบที่กระชับได้ใจความ (Concise Captions for presentation)
+        const nodeDetails = {
+            'drive-trigger': {
+                title: 'Google Drive Trigger',
+                type: 'Trigger (ตรวจจับไฟล์)',
+                icon: 'fa-brands fa-google-drive text-orange-400 bg-orange-500/10 border-orange-500/30',
+                desc: 'ตรวจจับและติดตามการอัปโหลดหรือแก้ไขไฟล์คู่มือการทำงาน (SOP/PDF) ของทั้ง 5 ส่วนงานแบบ Real-time',
+                benefit: 'ไม่ต้องกรอกข้อมูลระบบใหม่ทุกครั้งที่มีการเปลี่ยนระเบียบปฏิบัติ ลดขั้นตอนการแจ้งอัปเดตงานแบบเดิมๆ ไปโดยสิ้นเชิง'
+            },
+            'vector-store-1': {
+                title: 'Simple Vector Store',
+                type: 'Database (จัดเก็บความหมาย)',
+                icon: 'fa-solid fa-cube text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+                desc: 'ฐานข้อมูลเวกเตอร์อัจฉริยะ ทำหน้าที่เก็บพิกัดเชิงภาษาของคู่มือ เพื่อใช้ในการค้นหาคำตอบที่ใกล้เคียงกับคำถามผู้ใช้ที่สุด',
+                benefit: 'เปลี่ยนคู่มือทำงานที่เป็นไฟล์ PDF หนาๆ ให้กลายเป็นฐานข้อมูลที่สมองกลสามารถวิเคราะห์ประมวลผลได้ในเสี้ยววินาที'
+            },
+            'embeddings-1': {
+                title: 'Embeddings Google Gemini',
+                type: 'Embedding Engine',
+                icon: 'fa-brands fa-google text-indigo-400 bg-indigo-500/10',
+                desc: 'ระบบแปลงข้อความเป็นพิกัดตัวเลขเวกเตอร์ ผ่าน API Key ของ Google AI Studio เพื่อให้คอมพิวเตอร์เข้าใจนัยยะและความหมายของคำในภาษาไทย',
+                benefit: 'ช่วยให้ระบบสามารถเปรียบเทียบคำหรือเจตนาของคำถาม แม้ผู้ถามจะใช้คำพูดที่แตกต่างไปจากระเบียบแบบแผนเป๊ะๆ'
+            },
+            'data-loader': {
+                title: 'Default Data Loader',
+                type: 'Document Loader',
+                icon: 'fa-solid fa-file-pdf text-slate-300 bg-slate-800',
+                desc: 'ตัวสกัดเนื้อหา แปลงข้อมูลจากไฟล์ PDF / Word ให้ออกมาเป็นชุดข้อมูลข้อความ (Text Pieces) เพื่อเตรียมจัดกลุ่มข้อมูล',
+                benefit: 'ลดความซับซ้อนของการสกัดคู่มือหลายสิบประเภทให้เป็นมาตรฐานเดียวกัน เพื่อส่งเข้ากระบวนการ Embedding ได้รวดเร็ว'
+            },
+            'chat-trigger': {
+                title: 'When Chat Message Received',
+                type: 'Trigger (รับคำถาม)',
+                icon: 'fa-solid fa-comment-dots text-orange-400 bg-orange-500/10 border-orange-500/30',
+                desc: 'ช่องทางการติดต่อรับเรื่องจุดเดียว (Single Entry Point) คอยจับตาคำถามที่พิมพ์เข้ามาจากเพื่อนร่วมงานหรือฝ่ายอื่นๆ',
+                benefit: 'แก้จุดบอดเรื่องช่องทางการประสานงานที่กระจัดกระจาย (Line/อีเมล/โทรศัพท์) ให้มารวมอยู่ที่จุดบริการจุดเดียว'
+            },
+            'ai-agent': {
+                title: 'AI Agent Node',
+                type: 'Central Engine (สมองกลกลาง)',
+                icon: 'fa-solid fa-brain text-indigo-400 bg-indigo-500/10 border-indigo-500/30',
+                desc: 'สมองกลางควบคุมตรรกะ ทำหน้าที่เข้าใจโจทย์ แยกปัญหา และสั่งงานยื่น Checklist SLA หรือส่งเรื่องต่อไปยังเจ้าหน้าที่ที่เป็นมนุษย์',
+                benefit: 'ทำหน้าที่ตัดสินใจตอบปัญหาอย่างเป็นระบบเสมือนมีผู้จัดการหน้างานต้อนรับและประสานงาน 5 ทีมแบบครบวงจร'
+            },
+            'chat-model': {
+                title: 'Google Gemini Chat Model',
+                type: 'Language Model (เรียบเรียง)',
+                icon: 'fa-brands fa-google text-indigo-400 bg-indigo-500/10',
+                desc: 'ประมวลผลด้วยโมเดล Gemini เพื่อสร้างข้อความตอบกลับที่เป็นมิตร มีมารยาท และยื่นเสนอ "งานขั้นถัดไป" (Proactive Response) ได้',
+                benefit: 'ตอบคำถามยากๆ ด้วยภาษาทางการของธนาคาร สะท้อนความถูกต้องและเสริมภาพลักษณ์การช่วยเหลือเชิงรุก'
+            },
+            'memory': {
+                title: 'Simple Memory',
+                type: 'Memory Block (หน่วยความจำ)',
+                icon: 'fa-solid fa-database text-slate-300 bg-slate-800',
+                desc: 'จำบริบทคำถามล่าสุดของผู้ติดต่อ ทำให้คำตอบลื่นไหลต่อเนื่อง ไม่ถามคำเดิมซ้ำซากแม้เปลี่ยนหัวข้อการคุยสั้นๆ',
+                benefit: 'ผู้ประสานงานไม่ต้องเริ่มปูพื้นอธิบายเรื่องเดิมซ้ำๆ มอบประสบการณ์การปรึกษาข้อมูลที่สมบูรณ์แบบเสมือนคุยกับผู้เชี่ยวชาญ'
+            },
+            'vector-tool': {
+                title: 'Simple Vector Store (Tool)',
+                type: 'Retrieval Tool (เครื่องมือสืบค้น)',
+                icon: 'fa-solid fa-magnifying-glass text-emerald-400 bg-emerald-500/10 border-emerald-500/30',
+                desc: 'กลไก RAG (Retrieval-Augmented Generation) เจาะเข้าไปค้นหาคำตอบใน Vector database แล้วส่งกลับมาให้ Gemini คุยตอบกลับลูกค้า',
+                benefit: 'สกัดข้อมูลเฉพาะส่วนงานที่แม่นยำที่สุดให้ AI ใช้จัดระเบียบคำแนะนำ เช่น เรื่อง ATM โดนยึด, การแก้ไขปรับปรุงยอดโอนผิด'
+            },
+            'embeddings-2': {
+                title: 'Embeddings Gemini 2',
+                type: 'Embedding Engine',
+                icon: 'fa-brands fa-google text-indigo-400 bg-indigo-500/10',
+                desc: 'แปลงคำถามจากแชทล่าสุดของผู้ใช้ให้กลายเป็นรหัสเวกเตอร์ เพื่อเทียบว่าคำถามนั้นตรงกับคู่มือหน้าไหนใน Vector Store',
+                benefit: 'สร้างความเชื่อมโยงของภาษาและจับคู่เจตนาของผู้ใช้ เพื่อหาบทสรุปได้แม่นยำแม้ผู้ติดต่อจะใช้คำภาษาพูดแบบสั้นกระชับ'
+            }
+        };
+
+        // ไฮไลต์เฉพาะบางกระบวนงาน (สำหรับนำเสนอแยก Flow)
+        function highlightWorkflow(wfNum) {
+            resetHighlight();
+            if (wfNum === 1) {
+                // เบลอแบคกราวด์โหนด Flow 2
+                document.getElementById('node-chat-trigger').classList.add('opacity-15');
+                document.getElementById('node-ai-agent').classList.add('opacity-15');
+                document.getElementById('node-chat-model').classList.add('opacity-15');
+                document.getElementById('node-memory').classList.add('opacity-15');
+                document.getElementById('node-vector-tool').classList.add('opacity-15');
+                document.getElementById('node-embeddings-2').classList.add('opacity-15');
+                document.getElementById('line-4').classList.add('opacity-15');
+                document.getElementById('line-5').classList.add('opacity-15');
+                document.getElementById('line-6').classList.add('opacity-15');
+                document.getElementById('line-7').classList.add('opacity-15');
+                document.getElementById('line-8').classList.add('opacity-15');
+            } else if (wfNum === 2) {
+                // เบลอแบคกราวด์โหนด Flow 1
+                document.getElementById('node-drive-trigger').classList.add('opacity-15');
+                document.getElementById('node-vector-store-1').classList.add('opacity-15');
+                document.getElementById('node-embeddings-1').classList.add('opacity-15');
+                document.getElementById('node-data-loader').classList.add('opacity-15');
+                document.getElementById('line-1').classList.add('opacity-15');
+                document.getElementById('line-2').classList.add('opacity-15');
+                document.getElementById('line-3').classList.add('opacity-15');
+            }
+        }
+
+        // รีเซ็ตการไฮไลต์กลับสู่ปกติ
+        function resetHighlight() {
+            const allNodes = document.querySelectorAll('.n8n-canvas [id^="node-"]');
+            allNodes.forEach(node => node.classList.remove('opacity-15', 'scale-105', 'border-indigo-500', 'border-emerald-500', 'border-slate-700', 'border-2'));
+            
+            // คืนค่าเส้นเชื่อม
+            const allPaths = document.querySelectorAll('svg path');
+            allPaths.forEach(path => path.classList.remove('opacity-15'));
+            
+            document.getElementById('detail-box').classList.add('hidden');
+            document.getElementById('standard-info').classList.remove('hidden');
+            document.getElementById('detail-title').innerText = 'สัมผัสที่แต่ละโหนดใน n8n';
+            document.getElementById('detail-subtitle').innerText = 'คลิกที่โหนดเพื่อดูคำอธิบายที่กระชับ สรุปบทบาท และประโยชน์ในการใช้งานเพื่อนำเสนองานจริง';
+        }
+
+        // แสดงผลข้อมูลรายละเอียดเมื่อคลิกแต่ละโหนด
+        function showNodeDetail(nodeKey) {
+            const info = nodeDetails[nodeKey];
+            if (!info) return;
+
+            // จัดการสีขอบและไฮไลต์โหนดที่ถูกเลือก
+            resetHighlight();
+            const selectedNode = document.getElementById(`node-${nodeKey}`);
+            if (selectedNode) {
+                selectedNode.classList.add('scale-105');
+                if (nodeKey.includes('trigger')) {
+                    selectedNode.classList.add('border-orange-500', 'border-2');
+                } else if (nodeKey.includes('vector') || nodeKey.includes('loader')) {
+                    selectedNode.classList.add('border-emerald-500', 'border-2');
+                } else {
+                    selectedNode.classList.add('border-indigo-500', 'border-2');
+                }
+            }
+
+            // แสดงหน้าตาการให้ข้อมูลฝั่งขวา
+            document.getElementById('standard-info').classList.add('hidden');
+            const detailBox = document.getElementById('detail-box');
+            detailBox.classList.remove('hidden');
+
+            document.getElementById('node-title').innerText = info.title;
+            document.getElementById('node-type').innerText = info.type;
+            
+            // ดึงไอคอนมาปรับสไตล์
+            const iconContainer = document.getElementById('detail-icon');
+            iconContainer.className = `w-12 h-12 rounded-lg flex items-center justify-center text-lg ${info.icon}`;
+            iconContainer.innerHTML = selectedNode.querySelector('.w-10, .w-8').innerHTML;
+
+            // แสดงข้อมูลวิเคราะห์ที่กระชับได้ใจความ
+            document.getElementById('node-desc').innerText = info.desc;
+            document.getElementById('node-benefit').innerText = info.benefit;
+
+            document.getElementById('detail-title').innerText = 'สรุปรายโหนด';
+            document.getElementById('detail-subtitle').innerText = 'แสดงข้อมูลและอภิปรายคุณสมบัติเฉพาะขององค์ประกอบนี้';
+        }
+
+        // ฟังก์ชันระบบ Presentation นำเสนออัตโนมัติทีละขั้นตอน
+        let presentationInterval;
+        let presentationStep = 0;
+        const steps = [
+            'drive-trigger', 'data-loader', 'embeddings-1', 'vector-store-1',
+            'chat-trigger', 'embeddings-2', 'vector-tool', 'ai-agent', 'memory', 'chat-model'
+        ];
+
+        function startPresentation() {
+            stopPresentation();
+            presentationStep = 0;
+            
+            const runStep = () => {
+                const nodeKey = steps[presentationStep];
+                showNodeDetail(nodeKey);
+                
+                // ดึงสกรอไปหา Node บน Canvas อัตโนมัติเพื่อให้คนดูเห็น
+                const targetNode = document.getElementById(`node-${nodeKey}`);
+                if (targetNode) {
+                    targetNode.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                }
+
+                presentationStep = (presentationStep + 1) % steps.length;
+            };
+
+            runStep();
+            presentationInterval = setInterval(runStep, 4500); // วนรอบลูปทุก 4.5 วินาที
+        }
+
+        function stopPresentation() {
+            if (presentationInterval) {
+                clearInterval(presentationInterval);
+                presentationInterval = null;
+            }
+            resetHighlight();
+        }
+    </script>
+</body>
+</html>
